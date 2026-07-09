@@ -7,12 +7,13 @@
 @use 'sass:map';
 
 // ─── Google Fonts ────────────────────────────────────────────
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
-@import url('https://fonts.googleapis.com/icon?family=Material+Icons|Material+Icons+Round');
-@import url('https://fonts.googleapis.com/icon?family=Material+Icons+Round');
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&family=Sora:wght@100..800&display=swap');
 
 // Global Material Icon family override to force Rounded icons rendering
-.material-icons, .mat-icon, .mat-mdc-button .mat-icon, [class*="material-icons"] {
+.material-icons,
+.mat-icon,
+.mat-mdc-button .mat-icon,
+[class*="material-icons"] {
   font-family: 'Material Icons Round', 'Material Icons' !important;
 }
 
@@ -75,7 +76,7 @@
   --space-4xl: 96px;
 
   // Typography
-  --font-family: 'Poppins', sans-serif;
+  --font-family: 'Sora', sans-serif;
   --font-size-xs:  0.75rem;
   --font-size-sm:  0.875rem;
   --font-size-md:  1rem;
