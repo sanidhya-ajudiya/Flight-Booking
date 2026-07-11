@@ -1,73 +1,67 @@
-import { Injectable, signal } from '@angular/core';
-import { BehaviorSubject, Observable, of, delay } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { Injectable, signal, inject } from '@angular/core';
+import { Observable } from 'rxjs';
+import { tap, finalize } from 'rxjs/operators';
 import { User } from '../models';
 import { Router } from '@angular/router';
 import { NotificationService } from './notification.service';
+import { HttpClient } from '@angular/common/http';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly TOKEN_KEY = 'skywings_token';
   private readonly USER_KEY  = 'skywings_user';
+  private readonly API_URL   = 'http://localhost:5000/api/auth';
+
+  private http = inject(HttpClient);
+  private router = inject(Router);
+  private notify = inject(NotificationService);
 
   // Signals
   readonly currentUser  = signal<User | null>(this.loadUser());
   readonly isLoggedIn   = signal<boolean>(!!this.loadToken());
   readonly isLoading    = signal<boolean>(false);
 
-  constructor(
-    private router: Router,
-    private notify: NotificationService
-  ) {}
+  constructor() {}
 
-  // ── Mock Login ─────────────────────────────────────────────
+  // ── Login ─────────────────────────────────────────────
   login(email: string, password: string): Observable<{ token: string; user: User }> {
     this.isLoading.set(true);
-    const mockUser: User = {
-      id: '1',
-      email,
-      firstName: 'Arjun',
-      lastName: 'Sharma',
-      phone: '+91 98765 43210',
-      role: email.includes('admin') ? 'admin' : 'user',
-      createdAt: new Date().toISOString(),
-      preferences: { language: 'en', currency: 'INR', notifications: true, theme: 'light' }
-    };
-
-    return of({ token: 'mock-jwt-token-' + Date.now(), user: mockUser }).pipe(
-      delay(1200),
-      tap(({ token, user }) => {
-        this.saveSession(token, user);
-        this.isLoading.set(false);
-        this.notify.success('Welcome back, ' + user.firstName + '! ✈️');
-      })
+    return this.http.post<{ success: boolean; token: string; user: User }>(`${this.API_URL}/login`, { email, password }).pipe(
+      tap({
+        next: (res) => {
+          this.saveSession(res.token, res.user);
+          this.notify.success('Welcome back, ' + res.user.firstName + '! ✈️');
+        },
+        error: (err) => {
+          this.notify.error(err.error?.message || 'Login failed. Please check credentials.');
+        }
+      }),
+      finalize(() => this.isLoading.set(false))
     );
   }
 
-  // ── Mock Register ──────────────────────────────────────────
+  // ── Register ──────────────────────────────────────────
   register(data: Partial<User> & { password: string }): Observable<{ token: string; user: User }> {
     this.isLoading.set(true);
-    const newUser: User = {
-      id: Date.now().toString(),
-      email: data.email!,
-      firstName: data.firstName!,
-      lastName: data.lastName!,
-      phone: data.phone,
-      role: 'user',
-      createdAt: new Date().toISOString(),
-    };
-
-    return of({ token: 'mock-jwt-token-' + Date.now(), user: newUser }).pipe(
-      delay(1500),
-      tap(({ token, user }) => {
-        this.saveSession(token, user);
-        this.isLoading.set(false);
-        this.notify.success('Account created successfully! Welcome to SkyWings ✈️');
-      })
+    return this.http.post<{ success: boolean; token: string; user: User }>(`${this.API_URL}/register`, data).pipe(
+      tap({
+        next: (res) => {
+          this.saveSession(res.token, res.user);
+          this.notify.success('Account created successfully! Welcome to SkyWings ✈️');
+        },
+        error: (err) => {
+          this.notify.error(err.error?.message || 'Registration failed.');
+        }
+      }),
+      finalize(() => this.isLoading.set(false))
     );
   }
 
   logout(): void {
+    this.http.post(`${this.API_URL}/logout`, {}).subscribe({
+      next: () => {},
+      error: () => {}
+    });
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.USER_KEY);
     this.currentUser.set(null);
@@ -85,13 +79,19 @@ export class AuthService {
   }
 
   updateProfile(data: Partial<User>): void {
-    const user = this.currentUser();
-    if (user) {
-      const updated = { ...user, ...data };
-      this.currentUser.set(updated);
-      localStorage.setItem(this.USER_KEY, JSON.stringify(updated));
-      this.notify.success('Profile updated successfully!');
-    }
+    this.isLoading.set(true);
+    this.http.put<{ success: boolean; user: User }>(`${this.API_URL}/profile`, data).pipe(
+      finalize(() => this.isLoading.set(false))
+    ).subscribe({
+      next: (res) => {
+        this.currentUser.set(res.user);
+        localStorage.setItem(this.USER_KEY, JSON.stringify(res.user));
+        this.notify.success('Profile updated successfully!');
+      },
+      error: (err) => {
+        this.notify.error(err.error?.message || 'Failed to update profile');
+      }
+    });
   }
 
   private saveSession(token: string, user: User): void {

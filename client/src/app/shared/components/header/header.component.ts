@@ -63,9 +63,9 @@ import { AuthService } from '../../../core/services/auth.service';
           <!-- User Menu -->
           <div *ngIf="auth.isLoggedIn(); else loginBtn">
             <button mat-button class="user-btn" [matMenuTriggerFor]="userMenu">
-              <div class="user-avatar">
+              <span class="user-avatar">
                 {{ getUserInitials() }}
-              </div>
+              </span>
               <span class="user-name">{{ auth.currentUser()?.firstName }}</span>
               <mat-icon>keyboard_arrow_down</mat-icon>
             </button>
@@ -319,13 +319,16 @@ import { AuthService } from '../../../core/services/auth.service';
     }
 
     .user-btn {
-      display: flex;
-      align-items: center;
-      gap: 8px;
       border-radius: 50px;
       padding: 4px 12px !important;
       border: 1px solid var(--border-color);
       font-weight: 500;
+
+      ::ng-deep .mdc-button__label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
 
       @media (max-width: 600px) {
         .user-name, mat-icon:last-child { display: none; }
@@ -343,6 +346,7 @@ import { AuthService } from '../../../core/services/auth.service';
       justify-content: center;
       font-size: 13px;
       font-weight: 700;
+      flex-shrink: 0;
     }
 
     .user-name {

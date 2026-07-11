@@ -1,5 +1,7 @@
-import { Injectable, signal } from '@angular/core';
-import { Observable, of, delay } from 'rxjs';
+import { Injectable, signal, inject } from '@angular/core';
+import { Observable, of } from 'rxjs';
+import { map, tap } from 'rxjs/operators';
+import { HttpClient } from '@angular/common/http';
 import {
   Flight, SearchParams, FilterOptions, Airline, Airport,
   FlightSegment, CabinClass, SortBy, Destination, Booking
@@ -7,6 +9,9 @@ import {
 
 @Injectable({ providedIn: 'root' })
 export class FlightService {
+  private readonly API_URL = 'http://localhost:5000/api';
+  private http = inject(HttpClient);
+
   // State signals
   readonly searchParams  = signal<SearchParams | null>(null);
   readonly searchResults = signal<Flight[]>([]);
@@ -63,8 +68,26 @@ export class FlightService {
     this.isSearching.set(true);
     this.searchParams.set(params);
     this.saveHistory(params);
-    const flights = this.generateMockFlights(params);
-    return of(flights).pipe(delay(1800));
+
+    const queryParams: any = {
+      origin: params.origin?.code,
+      destination: params.destination?.code,
+      cabinClass: params.cabinClass
+    };
+
+    if (params.departureDate) {
+      // Format as YYYY-MM-DD
+      const d = new Date(params.departureDate);
+      queryParams.departureDate = d.toISOString().split('T')[0];
+    }
+
+    return this.http.get<{ success: boolean; data: Flight[] }>(`${this.API_URL}/flights/search`, { params: queryParams }).pipe(
+      map(res => res.data),
+      tap(flights => {
+        this.searchResults.set(flights);
+        this.isSearching.set(false);
+      })
+    );
   }
 
   getFlightById(id: string): Flight | undefined {
@@ -79,54 +102,6 @@ export class FlightService {
       a.name.toLowerCase().includes(q) ||
       a.country.toLowerCase().includes(q)
     ).slice(0, 8);
-  }
-
-  // ── Mock Data Generation ───────────────────────────────────
-  private generateMockFlights(params: SearchParams): Flight[] {
-    const flights: Flight[] = [];
-    const airlines = this.airlines.slice(0, 6);
-    const departDate = params.departureDate || new Date();
-
-    airlines.forEach((airline, i) => {
-      const depHour = [6, 8, 10, 13, 16, 19][i];
-      const duration = 120 + Math.floor(Math.random() * 180);
-      const stops = [0, 0, 1, 0, 1, 0][i];
-      const basePrice = 3500 + (i * 800) + Math.floor(Math.random() * 2000);
-      const taxes = Math.floor(basePrice * 0.18);
-      const gst = Math.floor(basePrice * 0.05);
-      const total = basePrice + taxes + gst;
-      const pax = (params.passengers.adults + params.passengers.children);
-
-      const dep = new Date(departDate);
-      dep.setHours(depHour, Math.floor(Math.random() * 60), 0, 0);
-      const arr = new Date(dep.getTime() + duration * 60000);
-
-      flights.push({
-        id: `FL-${airline.code}-${i + 1}-${Date.now()}`,
-        segments: [{
-          flightNumber: `${airline.code}${200 + i * 47}`,
-          airline,
-          origin: params.origin || this.airports[0],
-          destination: params.destination || this.airports[1],
-          departureTime: dep.toISOString(),
-          arrivalTime: arr.toISOString(),
-          duration,
-          aircraft: ['Boeing 737', 'Airbus A320', 'Boeing 777', 'Airbus A380', 'Boeing 787', 'Airbus A350'][i],
-          stops,
-          baggageAllowance: { cabin: '7 kg', checkedIn: stops > 0 ? '23 kg' : '15 kg', carryOn: '1 piece' }
-        }],
-        price: { base: basePrice, taxes, gst, total, currency: 'INR', pricePerPassenger: Math.floor(total / pax) },
-        cabinClass: params.cabinClass,
-        seatsAvailable: 5 + Math.floor(Math.random() * 30),
-        refundable: i % 3 === 0,
-        fareType: i % 2 === 0 ? 'Flexi' : 'Saver',
-        amenities: ['Wi-Fi', 'Meal', 'Entertainment'].filter((_, j) => j <= i % 3),
-        rating: 3.5 + Math.random() * 1.5,
-        onTimePerformance: 70 + Math.floor(Math.random() * 28)
-      });
-    });
-
-    return flights.sort((a, b) => a.price.total - b.price.total);
   }
 
   sortFlights(flights: Flight[], by: SortBy): Flight[] {
@@ -160,28 +135,31 @@ export class FlightService {
 
   // ── Booking ────────────────────────────────────────────────
   createBooking(booking: Partial<Booking>): Observable<Booking> {
-    const fullBooking: Booking = {
-      id: Date.now().toString(),
-      bookingRef: 'SKY' + Math.random().toString(36).substring(2, 8).toUpperCase(),
-      pnr: Math.random().toString(36).substring(2, 8).toUpperCase(),
-      status: 'confirmed',
-      flight: booking.flight!,
-      passengers: booking.passengers || [],
-      totalPrice: booking.flight!.price,
-      contactEmail: booking.contactEmail || '',
-      contactPhone: booking.contactPhone || '',
-      createdAt: new Date().toISOString(),
+    const body = {
+      flightId: booking.flight?.id,
+      passengers: booking.passengers,
+      contactEmail: booking.contactEmail,
+      contactPhone: booking.contactPhone,
+      cabinClass: booking.flight?.cabinClass || 'economy',
+      discount: (booking as any).discount || 0
     };
-    this.currentBooking.set(fullBooking);
-    this.saveBooking(fullBooking);
-    return of(fullBooking).pipe(delay(2000));
+
+    return this.http.post<{ success: boolean; data: Booking }>(`${this.API_URL}/bookings`, body).pipe(
+      map(res => res.data),
+      tap(newBooking => {
+        this.currentBooking.set(newBooking);
+        this.saveBooking(newBooking);
+      })
+    );
   }
 
   getMyBookings(): Observable<Booking[]> {
-    try {
-      const saved = localStorage.getItem('skywings_bookings');
-      return of(saved ? JSON.parse(saved) : []).pipe(delay(500));
-    } catch { return of([]); }
+    return this.http.get<{ success: boolean; count: number; data: Booking[] }>(`${this.API_URL}/bookings/my-bookings`).pipe(
+      map(res => res.data),
+      tap(list => {
+        localStorage.setItem('skywings_bookings', JSON.stringify(list));
+      })
+    );
   }
 
   private saveBooking(booking: Booking): void {
