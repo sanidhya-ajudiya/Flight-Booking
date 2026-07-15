@@ -178,10 +178,11 @@ export class LoginComponent {
     if (this.loginForm.invalid) return;
 
     const { email, password } = this.loginForm.value;
-    const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
+    const returnUrl = this.route.snapshot.queryParams['returnUrl'];
 
     this.authService.login(email, password).subscribe(() => {
-      this.router.navigateByUrl(returnUrl);
+      const destination = this.authService.isAdmin() ? '/admin' : (returnUrl || '/');
+      this.router.navigateByUrl(destination);
     });
   }
 

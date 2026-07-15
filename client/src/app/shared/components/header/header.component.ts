@@ -78,10 +78,13 @@ import { AuthService } from '../../../core/services/auth.service';
                 </div>
               </div>
               <mat-divider></mat-divider>
-              <button mat-menu-item routerLink="/dashboard">
+              <button mat-menu-item routerLink="/admin" *ngIf="auth.isAdmin()">
+                <mat-icon>admin_panel_settings</mat-icon> Admin Dashboard
+              </button>
+              <button mat-menu-item routerLink="/dashboard" *ngIf="!auth.isAdmin()">
                 <mat-icon>dashboard</mat-icon> My Dashboard
               </button>
-              <button mat-menu-item routerLink="/dashboard/bookings">
+              <button mat-menu-item routerLink="/dashboard/bookings" *ngIf="!auth.isAdmin()">
                 <mat-icon>flight_takeoff</mat-icon> My Bookings
               </button>
               <button mat-menu-item routerLink="/dashboard/profile">
@@ -119,8 +122,9 @@ import { AuthService } from '../../../core/services/auth.service';
           <a routerLink="/auth/register" (click)="closeMobileMenu()" class="btn-gradient w-full text-center">Sign Up</a>
         </div>
         <div class="mobile-user" *ngIf="auth.isLoggedIn()">
-          <a routerLink="/dashboard" (click)="closeMobileMenu()" class="mobile-nav-link">📊 Dashboard</a>
-          <a routerLink="/dashboard/bookings" (click)="closeMobileMenu()" class="mobile-nav-link">🎫 My Bookings</a>
+          <a routerLink="/admin" *ngIf="auth.isAdmin()" (click)="closeMobileMenu()" class="mobile-nav-link">🔑 Admin Dashboard</a>
+          <a routerLink="/dashboard" *ngIf="!auth.isAdmin()" (click)="closeMobileMenu()" class="mobile-nav-link">📊 Dashboard</a>
+          <a routerLink="/dashboard/bookings" *ngIf="!auth.isAdmin()" (click)="closeMobileMenu()" class="mobile-nav-link">🎫 My Bookings</a>
           <button class="mobile-nav-link logout" (click)="auth.logout()">🚪 Sign Out</button>
         </div>
       </div>
