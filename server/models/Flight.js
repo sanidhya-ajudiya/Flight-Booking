@@ -1,52 +1,29 @@
 const mongoose = require('mongoose');
 
-const StopDetailSchema = new mongoose.Schema({
-  airport: { type: mongoose.Schema.Types.ObjectId, ref: 'Airport' },
-  layoverDuration: { type: Number } // in minutes
-}, { _id: false });
-
-const FlightSchema = new mongoose.Schema({
-  flightNumber: { type: String, required: true, uppercase: true, index: true },
+const flightSchema = new mongoose.Schema({
+  flightNumber: { type: String, required: true, uppercase: true },
   airline: { type: mongoose.Schema.Types.ObjectId, ref: 'Airline', required: true },
-  origin: { type: mongoose.Schema.Types.ObjectId, ref: 'Airport', required: true },
-  destination: { type: mongoose.Schema.Types.ObjectId, ref: 'Airport', required: true },
-  departureTime: { type: Date, required: true },
-  arrivalTime: { type: Date, required: true },
-  duration: { type: Number, required: true }, // in minutes
-  aircraft: { type: String, default: 'Airbus A320' },
+  departureAirport: { type: mongoose.Schema.Types.ObjectId, ref: 'Airport', required: true },
+  arrivalAirport: { type: mongoose.Schema.Types.ObjectId, ref: 'Airport', required: true },
+  departureDate: { type: Date, required: true },
+  arrivalDate: { type: Date, required: true },
+  departureTime: { type: String, required: true }, // e.g. "08:30"
+  arrivalTime: { type: String, required: true },   // e.g. "11:45"
+  duration: { type: String, required: true },      // e.g. "3h 15m"
   stops: { type: Number, default: 0 },
-  stopDetails: [StopDetailSchema],
-  baggageAllowance: {
-    cabin: { type: String, default: '7 kg' },
-    checkedIn: { type: String, default: '15 kg' },
-    carryOn: { type: String, default: '1 piece' }
+  aircraftType: { type: String, default: 'Boeing 737-800' },
+  economyPrice: { type: Number, required: true },
+  businessPrice: { type: Number, required: true },
+  firstClassPrice: { type: Number, required: true },
+  totalSeats: { type: Number, default: 120 },
+  availableSeats: { type: Number, default: 120 },
+  occupiedSeats: [{ type: String }], // e.g. ["1A", "3C", "12B"]
+  status: { 
+    type: String, 
+    enum: ['Scheduled', 'Delayed', 'On-Time', 'In-Flight', 'Completed', 'Cancelled'], 
+    default: 'Scheduled' 
   },
-  prices: {
-    economy: { type: Number, required: true },
-    premium_economy: { type: Number },
-    business: { type: Number },
-    first: { type: Number }
-  },
-  seats: {
-    economy: { type: Number, default: 120 },
-    premium_economy: { type: Number, default: 20 },
-    business: { type: Number, default: 20 },
-    first: { type: Number, default: 10 }
-  },
-  seatsBooked: {
-    economy: { type: [String], default: [] },
-    premium_economy: { type: [String], default: [] },
-    business: { type: [String], default: [] },
-    first: { type: [String], default: [] }
-  },
-  refundable: { type: Boolean, default: true },
-  fareType: { type: String, enum: ['Saver', 'Flexi'], default: 'Saver' },
-  amenities: { type: [String], default: [] },
-  rating: { type: Number, default: 4.0 },
-  onTimePerformance: { type: Number, default: 90 },
-  status: { type: String, enum: ['scheduled', 'delayed', 'cancelled', 'completed'], default: 'scheduled' }
-}, {
-  timestamps: true
-});
+  image: { type: String, default: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=800&q=80' }
+}, { timestamps: true });
 
-module.exports = mongoose.model('Flight', FlightSchema);
+module.exports = mongoose.model('Flight', flightSchema);

@@ -1,66 +1,33 @@
-import { Injectable, signal, computed } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { Injectable, signal } from '@angular/core';
 
-export type Theme = 'light' | 'dark';
-export type Language = 'en' | 'hi' | 'ar' | 'fr';
-export type Currency = 'INR' | 'USD' | 'EUR' | 'GBP' | 'AED';
-
-@Injectable({ providedIn: 'root' })
+@Injectable({
+  providedIn: 'root'
+})
 export class ThemeService {
-  private readonly THEME_KEY    = 'skywings_theme';
-  private readonly LANG_KEY     = 'skywings_lang';
-  private readonly CURRENCY_KEY = 'skywings_currency';
-
-  // Signals
-  readonly theme    = signal<Theme>(this.getSavedTheme());
-  readonly language = signal<Language>(this.getSavedLang());
-  readonly currency = signal<Currency>(this.getSavedCurrency());
-
-  readonly isDark   = computed(() => this.theme() === 'dark');
+  isDarkMode = signal<boolean>(false);
 
   constructor() {
-    this.applyTheme(this.theme());
+    const savedTheme = localStorage.getItem('skywings_theme');
+    if (savedTheme) {
+      this.isDarkMode.set(savedTheme === 'dark');
+    } else {
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      this.isDarkMode.set(prefersDark);
+    }
+    this.applyTheme();
   }
 
-  toggleTheme(): void {
-    const next = this.theme() === 'light' ? 'dark' : 'light';
-    this.setTheme(next);
+  toggleTheme() {
+    this.isDarkMode.update(val => !val);
+    localStorage.setItem('skywings_theme', this.isDarkMode() ? 'dark' : 'light');
+    this.applyTheme();
   }
 
-  setTheme(theme: Theme): void {
-    this.theme.set(theme);
-    this.applyTheme(theme);
-    localStorage.setItem(this.THEME_KEY, theme);
-  }
-
-  setLanguage(lang: Language): void {
-    this.language.set(lang);
-    localStorage.setItem(this.LANG_KEY, lang);
-  }
-
-  setCurrency(currency: Currency): void {
-    this.currency.set(currency);
-    localStorage.setItem(this.CURRENCY_KEY, currency);
-  }
-
-  private applyTheme(theme: Theme): void {
-    document.documentElement.setAttribute('data-theme', theme);
-    document.documentElement.classList.toggle('dark-mode', theme === 'dark');
-  }
-
-  private getSavedTheme(): Theme {
-    const saved = localStorage.getItem(this.THEME_KEY);
-    if (saved === 'light' || saved === 'dark') return saved;
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  }
-
-  private getSavedLang(): Language {
-    const saved = localStorage.getItem(this.LANG_KEY);
-    return (saved as Language) || 'en';
-  }
-
-  private getSavedCurrency(): Currency {
-    const saved = localStorage.getItem(this.CURRENCY_KEY);
-    return (saved as Currency) || 'INR';
+  private applyTheme() {
+    if (this.isDarkMode()) {
+      document.documentElement.classList.add('dark-theme');
+    } else {
+      document.documentElement.classList.remove('dark-theme');
+    }
   }
 }

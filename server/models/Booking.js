@@ -1,49 +1,37 @@
 const mongoose = require('mongoose');
 
-const PassengerDetailSchema = new mongoose.Schema({
-  type: { type: String, enum: ['adult', 'child', 'infant'], default: 'adult' },
-  title: { type: String },
-  firstName: { type: String, required: true },
-  lastName: { type: String, required: true },
-  dateOfBirth: { type: String },
-  nationality: { type: String },
-  passportNumber: { type: String },
-  email: { type: String },
-  phone: { type: String },
-  specialAssistance: { type: String },
-  mealPreference: { type: String },
-  seatId: { type: String }
-}, { _id: false });
-
-const BookingSchema = new mongoose.Schema({
-  bookingRef: { type: String, required: true, unique: true, uppercase: true, index: true },
-  pnr: { type: String, required: true, unique: true, uppercase: true, index: true },
-  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  status: { type: String, enum: ['confirmed', 'pending', 'cancelled', 'completed'], default: 'confirmed' },
-  flight: { type: mongoose.Schema.Types.ObjectId, ref: 'Flight', required: true },
-  returnFlight: { type: mongoose.Schema.Types.ObjectId, ref: 'Flight' },
-  passengers: [PassengerDetailSchema],
-  totalPrice: {
-    base: { type: Number, required: true },
-    taxes: { type: Number, required: true },
-    gst: { type: Number, required: true },
-    total: { type: Number, required: true },
-    currency: { type: String, default: 'INR' },
-    pricePerPassenger: { type: Number }
-  },
-  payment: {
-    method: { type: String, enum: ['card', 'upi', 'netbanking', 'wallet'], default: 'card' },
-    transactionId: { type: String },
-    status: { type: String, enum: ['success', 'failed', 'pending'], default: 'success' },
-    amount: { type: Number },
-    paidAt: { type: Date }
-  },
-  contactEmail: { type: String, required: true },
-  contactPhone: { type: String, required: true },
-  coupon: { type: String },
-  discount: { type: Number, default: 0 }
-}, {
-  timestamps: true
+const passengerSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  gender: { type: String, enum: ['Male', 'Female', 'Other'], required: true },
+  dob: { type: Date, required: true },
+  passportNumber: { type: String, default: '' },
+  nationality: { type: String, default: 'Indian' },
+  seatNumber: { type: String, required: true },
+  extraBaggageKg: { type: Number, default: 0 }
 });
 
-module.exports = mongoose.model('Booking', BookingSchema);
+const bookingSchema = new mongoose.Schema({
+  pnr: { type: String, required: true, unique: true, uppercase: true },
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  flight: { type: mongoose.Schema.Types.ObjectId, ref: 'Flight', required: true },
+  tripType: { type: String, enum: ['one-way', 'round-trip', 'multi-city'], default: 'one-way' },
+  returnFlight: { type: mongoose.Schema.Types.ObjectId, ref: 'Flight', default: null },
+  cabinClass: { type: String, enum: ['economy', 'business', 'firstClass'], default: 'economy' },
+  passengers: [passengerSchema],
+  baseFare: { type: Number, required: true },
+  taxAmount: { type: Number, default: 0 },
+  extraBaggageFee: { type: Number, default: 0 },
+  discountAmount: { type: Number, default: 0 },
+  couponCode: { type: String, default: '' },
+  totalAmount: { type: Number, required: true },
+  status: { 
+    type: String, 
+    enum: ['Confirmed', 'Cancelled', 'Completed', 'Refunded'], 
+    default: 'Confirmed' 
+  },
+  paymentStatus: { type: String, enum: ['Paid', 'Pending', 'Failed', 'Refunded'], default: 'Paid' },
+  paymentId: { type: String, default: '' },
+  paymentMethod: { type: String, default: 'Card' }
+}, { timestamps: true });
+
+module.exports = mongoose.model('Booking', bookingSchema);

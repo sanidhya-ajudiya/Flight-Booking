@@ -1,14 +1,13 @@
 const mongoose = require('mongoose');
 
-const AirlineSchema = new mongoose.Schema({
-  code: { type: String, required: true, unique: true, uppercase: true, index: true },
+const airlineSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  logo: { type: String, default: '' },
-  country: { type: String },
-  color: { type: String, default: '#1565C0' },
-  status: { type: String, enum: ['active', 'inactive'], default: 'active' }
-}, {
-  timestamps: true
-});
+  code: { type: String, required: true, uppercase: true, unique: true },
+  logo: { type: String, required: true },
+  country: { type: String, required: true },
+  description: { type: String, default: '' },
+  contactEmail: { type: String, default: '' },
+  website: { type: String, default: '' }
+}, { timestamps: true });
 
-module.exports = mongoose.model('Airline', AirlineSchema);
+module.exports = mongoose.model('Airline', airlineSchema);

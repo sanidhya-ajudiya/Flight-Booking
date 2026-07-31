@@ -1,48 +1,25 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { NotificationItem } from '../interfaces';
 
-export interface Toast {
-  id: string;
-  type: 'success' | 'error' | 'info' | 'warning';
-  title?: string;
-  message: string;
-  duration?: number;
-}
-
-@Injectable({ providedIn: 'root' })
+@Injectable({
+  providedIn: 'root'
+})
 export class NotificationService {
-  readonly toasts = signal<Toast[]>([]);
+  private apiUrl = 'http://localhost:5000/api/notifications';
 
-  show(toast: Omit<Toast, 'id'>): void {
-    const id = Date.now().toString();
-    const newToast: Toast = { id, duration: 4000, ...toast };
-    this.toasts.update(list => [...list, newToast]);
+  constructor(private http: HttpClient) {}
 
-    if (newToast.duration && newToast.duration > 0) {
-      setTimeout(() => this.dismiss(id), newToast.duration);
-    }
+  getNotifications(): Observable<NotificationItem[]> {
+    return this.http.get<NotificationItem[]>(this.apiUrl);
   }
 
-  success(message: string, title?: string): void {
-    this.show({ type: 'success', message, title: title || 'Success' });
+  markAsRead(id: string): Observable<NotificationItem> {
+    return this.http.patch<NotificationItem>(`${this.apiUrl}/${id}/read`, {});
   }
 
-  error(message: string, title?: string): void {
-    this.show({ type: 'error', message, title: title || 'Error', duration: 6000 });
-  }
-
-  info(message: string, title?: string): void {
-    this.show({ type: 'info', message, title: title || 'Info' });
-  }
-
-  warning(message: string, title?: string): void {
-    this.show({ type: 'warning', message, title: title || 'Warning', duration: 5000 });
-  }
-
-  dismiss(id: string): void {
-    this.toasts.update(list => list.filter(t => t.id !== id));
-  }
-
-  clear(): void {
-    this.toasts.set([]);
+  broadcast(data: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/broadcast`, data);
   }
 }

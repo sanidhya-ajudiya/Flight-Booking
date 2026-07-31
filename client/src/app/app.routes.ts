@@ -1,90 +1,39 @@
 import { Routes } from '@angular/router';
-import { authGuard, adminGuard, guestGuard } from './core/guards/auth.guard';
+import { HomeComponent } from './features/home/home.component';
+import { FlightResultsComponent } from './features/flight-results/flight-results.component';
+import { BookingFlowComponent } from './features/booking-flow/booking-flow.component';
+import { BookingHistoryComponent } from './features/booking-history/booking-history.component';
+import { ProfileComponent } from './features/profile/profile.component';
+import { LoginComponent } from './features/auth/login/login.component';
+import { RegisterComponent } from './features/auth/register/register.component';
+
+import { AdminDashboardComponent } from './features/admin/dashboard/admin-dashboard.component';
+import { AdminFlightsComponent } from './features/admin/flights/admin-flights.component';
+import { AdminAirportsComponent } from './features/admin/airports/admin-airports.component';
+import { AdminAirlinesComponent } from './features/admin/airlines/admin-airlines.component';
+import { AdminBookingsComponent } from './features/admin/bookings/admin-bookings.component';
+import { AdminCouponsComponent } from './features/admin/coupons/admin-coupons.component';
+import { AdminRefundsComponent } from './features/admin/refunds/admin-refunds.component';
+
+import { authGuard, adminGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
-  // ── Landing ──────────────────────────────────────────────
-  {
-    path: '',
-    loadComponent: () => import('./features/landing/landing.component').then(m => m.LandingComponent)
-  },
+  { path: '', component: HomeComponent },
+  { path: 'search', component: FlightResultsComponent },
+  { path: 'booking', component: BookingFlowComponent, canActivate: [authGuard] },
+  { path: 'my-bookings', component: BookingHistoryComponent, canActivate: [authGuard] },
+  { path: 'profile', component: ProfileComponent, canActivate: [authGuard] },
+  { path: 'login', component: LoginComponent },
+  { path: 'register', component: RegisterComponent },
 
-  // ── Auth ─────────────────────────────────────────────────
-  {
-    path: 'auth',
-    loadChildren: () => import('./features/auth/auth.routes').then(m => m.AUTH_ROUTES)
-  },
+  // Admin Routes
+  { path: 'admin', component: AdminDashboardComponent, canActivate: [adminGuard] },
+  { path: 'admin/flights', component: AdminFlightsComponent, canActivate: [adminGuard] },
+  { path: 'admin/airports', component: AdminAirportsComponent, canActivate: [adminGuard] },
+  { path: 'admin/airlines', component: AdminAirlinesComponent, canActivate: [adminGuard] },
+  { path: 'admin/bookings', component: AdminBookingsComponent, canActivate: [adminGuard] },
+  { path: 'admin/coupons', component: AdminCouponsComponent, canActivate: [adminGuard] },
+  { path: 'admin/refunds', component: AdminRefundsComponent, canActivate: [adminGuard] },
 
-  // ── Search ────────────────────────────────────────────────
-  {
-    path: 'search',
-    loadComponent: () => import('./features/search/search.component').then(m => m.SearchComponent)
-  },
-
-  // ── Results ───────────────────────────────────────────────
-  {
-    path: 'results',
-    loadComponent: () => import('./features/results/results.component').then(m => m.ResultsComponent)
-  },
-
-  // ── Destinations ──────────────────────────────────────────
-  {
-    path: 'destinations',
-    loadComponent: () => import('./features/destinations/destinations.component').then(m => m.DestinationsComponent)
-  },
-
-  // ── Offers ────────────────────────────────────────────────
-  {
-    path: 'offers',
-    loadComponent: () => import('./features/offers/offers.component').then(m => m.OffersComponent)
-  },
-
-  // ── Flight Details ─────────────────────────────────────────
-  {
-    path: 'flight/:id',
-    loadComponent: () => import('./features/flight-details/flight-details.component').then(m => m.FlightDetailsComponent)
-  },
-
-  // ── Seat Selection ─────────────────────────────────────────
-  {
-    path: 'seats/:id',
-    loadComponent: () => import('./features/seat-selection/seat-selection.component').then(m => m.SeatSelectionComponent)
-  },
-
-  // ── Passenger Details ──────────────────────────────────────
-  {
-    path: 'passengers',
-    loadComponent: () => import('./features/passenger-details/passenger-details.component').then(m => m.PassengerDetailsComponent)
-  },
-
-  // ── Payment ───────────────────────────────────────────────
-  {
-    path: 'payment',
-    loadComponent: () => import('./features/payment/payment.component').then(m => m.PaymentComponent)
-  },
-
-  // ── Booking Confirmation ──────────────────────────────────
-  {
-    path: 'booking-confirmation',
-    loadComponent: () => import('./features/booking-confirmation/booking-confirmation.component').then(m => m.BookingConfirmationComponent)
-  },
-
-  // ── User Dashboard ─────────────────────────────────────────
-  {
-    path: 'dashboard',
-    canActivate: [authGuard],
-    loadChildren: () => import('./features/dashboard/dashboard.routes').then(m => m.DASHBOARD_ROUTES)
-  },
-
-  // ── Admin Dashboard ────────────────────────────────────────
-  {
-    path: 'admin',
-    canActivate: [adminGuard],
-    loadChildren: () => import('./features/admin/admin.routes').then(m => m.ADMIN_ROUTES)
-  },
-
-  // ── Wildcard ──────────────────────────────────────────────
-  {
-    path: '**',
-    loadComponent: () => import('./shared/components/not-found/not-found.component').then(m => m.NotFoundComponent)
-  }
+  { path: '**', redirectTo: '' }
 ];

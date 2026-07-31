@@ -1,195 +1,145 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink, ActivatedRoute } from '@angular/router';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
+import { FormsModule } from '@angular/forms';
+import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, RouterLink, ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   template: `
-    <div class="auth-page flex-center">
-      <div class="auth-card glass-card animate-fadeInUp">
-        <div class="auth-header text-center">
-          <div class="logo-icon">✈️</div>
-          <h2>Welcome Back</h2>
-          <p>Sign in to manage bookings and checkout instantly.</p>
+    <div class="auth-page container">
+      <div class="auth-card glass-card">
+        <div class="auth-header">
+          <span class="auth-logo">✈️</span>
+          <h2>Sign In to SkyWings</h2>
+          <p>Access your bookings, wallet rewards, and e-tickets</p>
         </div>
 
-        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="auth-form flex-col gap-md">
-          <!-- Email -->
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Email Address</mat-label>
-            <input matInput type="email" formControlName="email" placeholder="e.g. arjun@example.com">
-            <mat-icon matPrefix>email</mat-icon>
-            <mat-error *ngIf="loginForm.get('email')?.hasError('required')">Email is required</mat-error>
-            <mat-error *ngIf="loginForm.get('email')?.hasError('email')">Please enter a valid email</mat-error>
-          </mat-form-field>
+        <!-- Quick Demo Credentials Box -->
+        <div class="demo-credentials">
+          <p><strong>Demo Accounts:</strong></p>
+          <div class="demo-buttons">
+            <button (click)="fillDemo('customer')" class="btn-demo">User: user&#64;skywings.com</button>
+            <button (click)="fillDemo('admin')" class="btn-demo admin">Admin: admin&#64;skywings.com</button>
+          </div>
+        </div>
 
-          <!-- Password -->
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Password</mat-label>
-            <input matInput [type]="hidePassword() ? 'password' : 'text'" formControlName="password">
-            <mat-icon matPrefix>lock</mat-icon>
-            <button type="button" mat-icon-button matSuffix (click)="toggleHidePassword()" aria-label="Toggle password visibility">
-              <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
-            </button>
-            <mat-error *ngIf="loginForm.get('password')?.hasError('required')">Password is required</mat-error>
-          </mat-form-field>
-
-          <!-- Forgot Password Link -->
-          <div class="flex-between">
-            <a routerLink="/auth/forgot-password" class="forgot-link">Forgot Password?</a>
-            <a routerLink="/auth/otp-verify" class="forgot-link">Login via OTP</a>
+        <form (ngSubmit)="onLogin()" class="auth-form">
+          <div class="form-group">
+            <label>Email Address</label>
+            <input type="email" [(ngModel)]="email" name="email" required placeholder="user@skywings.com" class="custom-input">
           </div>
 
-          <!-- Submit Button -->
-          <button type="submit" class="btn-gradient w-full mt-auto" [disabled]="loginForm.invalid || isLoading()">
-            <span *ngIf="!isLoading()">Sign In</span>
-            <span *ngIf="isLoading()" class="flex-center gap-sm">
-              <span class="spinner-small"></span> Authenticating...
-            </span>
+          <div class="form-group">
+            <label>Password</label>
+            <input type="password" [(ngModel)]="password" name="password" required placeholder="••••••••" class="custom-input">
+          </div>
+
+          <div *ngIf="errorMessage" class="error-alert">
+            {{ errorMessage }}
+          </div>
+
+          <button type="submit" [disabled]="loading" class="btn-primary auth-btn">
+            {{ loading ? 'Authenticating...' : 'SIGN IN ➔' }}
           </button>
+
+          <div class="auth-footer">
+            <span>Don't have an account? <a routerLink="/register">Register now</a></span>
+          </div>
         </form>
-
-        <!-- Social Login UI -->
-        <div class="divider-text">or continue with</div>
-
-        <div class="social-login-grid">
-          <button class="social-btn google-btn" (click)="socialLogin('Google')">
-            <span class="social-icon">🌐</span> Google
-          </button>
-          <button class="social-btn facebook-btn" (click)="socialLogin('Facebook')">
-            <span class="social-icon">📘</span> Facebook
-          </button>
-        </div>
-
-        <div class="auth-footer text-center">
-          <p>Don't have an account? <a routerLink="/auth/register">Sign Up</a></p>
-        </div>
       </div>
     </div>
   `,
   styles: [`
-    .auth-page {
-      min-height: calc(100vh - 120px);
-      padding: var(--space-xl);
-      background: radial-gradient(circle at 50% 30%, rgba(21, 101, 192, 0.05) 0%, transparent 60%);
-    }
+    .auth-page { display: flex; justify-content: center; align-items: center; min-height: 80vh; padding-top: 40px; }
+    .auth-card { width: 100%; max-width: 440px; padding: 40px; }
 
-    .auth-card {
-      width: 100%;
-      max-width: 440px;
-      padding: var(--space-2xl) !important;
-    }
+    .auth-header { text-align: center; margin-bottom: 24px; }
+    .auth-logo { font-size: 2.5rem; display: block; margin-bottom: 8px; }
+    .auth-header h2 { font-size: 1.6rem; font-weight: 800; }
+    .auth-header p { color: var(--text-secondary); font-size: 0.85rem; margin-top: 4px; }
 
-    .auth-header {
-      margin-bottom: var(--space-xl);
-      .logo-icon { font-size: 40px; margin-bottom: var(--space-sm); }
-      h2 { font-size: 1.8rem; font-weight: 800; color: var(--text-primary); margin-bottom: var(--space-xs); }
-      p { font-size: 0.85rem; color: var(--text-secondary); }
-    }
-
-    .auth-form {
-      margin-bottom: var(--space-lg);
-    }
-
-    .forgot-link {
+    .demo-credentials {
+      background: rgba(2, 132, 199, 0.08);
+      border: 1px solid rgba(2, 132, 199, 0.2);
+      padding: 12px;
+      border-radius: 12px;
+      margin-bottom: 20px;
       font-size: 0.8rem;
-      font-weight: 500;
     }
 
-    .social-login-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: var(--space-md);
-      margin: var(--space-lg) 0;
-    }
-
-    .social-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: var(--space-sm);
-      padding: 10px;
+    .demo-buttons { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+    .btn-demo {
+      background: var(--bg-surface);
       border: 1px solid var(--border-color);
-      border-radius: var(--border-radius-md);
-      background: var(--bg-card);
-      font-family: var(--font-family);
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--text-primary);
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-weight: 700;
       cursor: pointer;
-      transition: all var(--transition-base);
+      text-align: left;
+      color: var(--primary-accent);
 
-      &:hover {
-        background: var(--bg-primary);
-        border-color: var(--color-primary-light);
-        transform: translateY(-1px);
-      }
+      &.admin { color: #ef4444; }
     }
 
-    .auth-footer {
-      font-size: 0.85rem;
-      color: var(--text-secondary);
-      margin-top: var(--space-md);
-      a { font-weight: 600; }
+    .auth-form { display: flex; flex-direction: column; gap: 16px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; label { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); } }
+
+    .custom-input {
+      height: 46px;
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      padding: 0 14px;
+      font-weight: 600;
     }
 
-    .spinner-small {
-      display: inline-block;
-      width: 16px;
-      height: 16px;
-      border: 2px solid rgba(255,255,255,0.3);
-      border-radius: 50%;
-      border-top-color: white;
-      animation: spin 0.8s ease-in-out infinite;
-    }
+    .error-alert { background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 10px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; text-align: center; }
+
+    .auth-btn { justify-content: center; height: 48px; font-size: 0.95rem; }
+
+    .auth-footer { text-align: center; margin-top: 10px; font-size: 0.88rem; a { color: var(--primary-accent); font-weight: 700; } }
   `]
 })
 export class LoginComponent {
-  private fb = inject(FormBuilder);
-  private authService = inject(AuthService);
-  private router = inject(Router);
-  private route = inject(ActivatedRoute);
+  authService = inject(AuthService);
+  router = inject(Router);
 
-  hidePassword = signal(true);
-  isLoading = this.authService.isLoading;
+  email: string = '';
+  password: string = '';
+  loading: boolean = false;
+  errorMessage: string = '';
 
-  loginForm: FormGroup;
-
-  constructor() {
-    this.loginForm = this.fb.group({
-      email: ['arjun@example.com', [Validators.required, Validators.email]],
-      password: ['password', [Validators.required, Validators.minLength(6)]]
-    });
+  fillDemo(type: 'customer' | 'admin') {
+    if (type === 'admin') {
+      this.email = 'admin@skywings.com';
+      this.password = 'admin123';
+    } else {
+      this.email = 'user@skywings.com';
+      this.password = 'user123';
+    }
   }
 
-  toggleHidePassword(): void {
-    this.hidePassword.update(v => !v);
-  }
+  onLogin() {
+    this.loading = true;
+    this.errorMessage = '';
 
-  onSubmit(): void {
-    if (this.loginForm.invalid) return;
-
-    const { email, password } = this.loginForm.value;
-    const returnUrl = this.route.snapshot.queryParams['returnUrl'];
-
-    this.authService.login(email, password).subscribe(() => {
-      const destination = this.authService.isAdmin() ? '/admin' : (returnUrl || '/');
-      this.router.navigateByUrl(destination);
-    });
-  }
-
-  socialLogin(provider: string): void {
-    const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
-    this.authService.login(`${provider.toLowerCase()}user@example.com`, 'socialpass').subscribe(() => {
-      this.router.navigateByUrl(returnUrl);
+    this.authService.login({ email: this.email, password: this.password }).subscribe({
+      next: (user) => {
+        this.loading = false;
+        if (user.role === 'admin') {
+          this.router.navigate(['/admin']);
+        } else {
+          this.router.navigate(['/']);
+        }
+      },
+      error: (err) => {
+        this.loading = false;
+        this.errorMessage = err.error?.message || 'Invalid login credentials';
+      }
     });
   }
 }
