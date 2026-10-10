@@ -3,11 +3,13 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Airline } from '../interfaces';
 
+import { environment } from '../../../environments/environment';
+
 @Injectable({
   providedIn: 'root'
 })
 export class AirlineService {
-  private apiUrl = 'http://localhost:5000/api/airlines';
+  private apiUrl = `${environment.apiUrl}/airlines`;
 
   constructor(private http: HttpClient) {}
 

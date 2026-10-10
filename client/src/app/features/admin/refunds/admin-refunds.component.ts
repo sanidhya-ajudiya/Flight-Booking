@@ -30,8 +30,8 @@ import { Refund } from '../../../core/interfaces';
           </thead>
           <tbody>
             <tr *ngFor="let r of refunds">
-              <td>{{ r.user?.name }}<br><small>{{ r.user?.email }}</small></td>
-              <td><strong>{{ r.booking?.pnr || 'N/A' }}</strong></td>
+              <td>{{ r.user.name }}<br><small>{{ r.user.email }}</small></td>
+              <td><strong>{{ r.booking.pnr }}</strong></td>
               <td><strong>₹{{ r.amount }}</strong></td>
               <td>{{ r.reason }}</td>
               <td>

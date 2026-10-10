@@ -43,22 +43,22 @@ import { Booking } from '../../core/interfaces';
           <!-- Flight Info -->
           <div class="card-body">
             <div class="flight-details">
-              <img [src]="b.flight?.airline?.logo" class="airline-logo">
+              <img [src]="b.flight.airline.logo" class="airline-logo">
               <div>
-                <h4>{{ b.flight?.airline?.name }}</h4>
-                <span class="flight-no">{{ b.flight?.flightNumber }} • {{ b.cabinClass | uppercase }}</span>
+                <h4>{{ b.flight.airline.name }}</h4>
+                <span class="flight-no">{{ b.flight.flightNumber }} • {{ b.cabinClass | uppercase }}</span>
               </div>
             </div>
 
             <div class="route-display">
               <div>
-                <span class="city-code">{{ b.flight?.departureAirport?.code }}</span>
-                <span class="time">{{ b.flight?.departureTime }}</span>
+                <span class="city-code">{{ b.flight.departureAirport.code }}</span>
+                <span class="time">{{ b.flight.departureTime }}</span>
               </div>
               <div class="arrow">➔</div>
               <div>
-                <span class="city-code">{{ b.flight?.arrivalAirport?.code }}</span>
-                <span class="time">{{ b.flight?.arrivalTime }}</span>
+                <span class="city-code">{{ b.flight.arrivalAirport.code }}</span>
+                <span class="time">{{ b.flight.arrivalTime }}</span>
               </div>
             </div>
 

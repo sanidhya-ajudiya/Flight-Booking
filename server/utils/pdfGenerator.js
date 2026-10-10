@@ -1,13 +1,6 @@
 const PDFDocument = require('pdfkit');
 
-const generateTicketPDF = (booking, res) => {
-  const doc = new PDFDocument({ size: 'A4', margin: 40 });
-
-  res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader('Content-Disposition', `attachment; filename=E-Ticket-${booking.pnr}.pdf`);
-
-  doc.pipe(res);
-
+const buildPDF = (booking, doc) => {
   // Background Header
   doc.rect(0, 0, 595.28, 100).fill('#0f172a');
 
@@ -82,8 +75,32 @@ const generateTicketPDF = (booking, res) => {
 
   // Footer Note
   doc.fillColor('#94a3b8').fontSize(9).font('Helvetica').text('Please present this ticket along with a valid government-issued photo ID / passport at check-in counter.', 40, 750, { align: 'center' });
+};
 
+const generateTicketPDF = (booking, res) => {
+  const doc = new PDFDocument({ size: 'A4', margin: 40 });
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename=E-Ticket-${booking.pnr}.pdf`);
+  doc.pipe(res);
+  buildPDF(booking, doc);
   doc.end();
 };
 
+const generateTicketPDFBuffer = (booking) => {
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({ size: 'A4', margin: 40 });
+    const buffers = [];
+    doc.on('data', buffers.push.bind(buffers));
+    doc.on('end', () => {
+      const pdfData = Buffer.concat(buffers);
+      resolve(pdfData);
+    });
+    doc.on('error', reject);
+    buildPDF(booking, doc);
+    doc.end();
+  });
+};
+
 module.exports = generateTicketPDF;
+module.exports.generateTicketPDF = generateTicketPDF;
+module.exports.generateTicketPDFBuffer = generateTicketPDFBuffer;

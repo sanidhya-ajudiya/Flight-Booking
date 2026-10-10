@@ -3,11 +3,13 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Flight } from '../interfaces';
 
+import { environment } from '../../../environments/environment';
+
 @Injectable({
   providedIn: 'root'
 })
 export class FlightService {
-  private apiUrl = 'http://localhost:5000/api/flights';
+  private apiUrl = `${environment.apiUrl}/flights`;
 
   constructor(private http: HttpClient) {}
 
@@ -43,5 +45,20 @@ export class FlightService {
 
   deleteFlight(id: string): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${id}`);
+  }
+
+  getLiveFlightStatus(flightNumber?: string, date?: string): Observable<Flight[]> {
+    let params = new HttpParams();
+    if (flightNumber) params = params.set('flightNumber', flightNumber);
+    if (date) params = params.set('date', date);
+    return this.http.get<Flight[]>(`${this.apiUrl}/live-status`, { params });
+  }
+
+  lockSeats(flightId: string, seats: string[]): Observable<any> {
+    return this.http.post(`${this.apiUrl}/${flightId}/lock-seats`, { seats });
+  }
+
+  unlockSeats(flightId: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/${flightId}/unlock-seats`, {});
   }
 }

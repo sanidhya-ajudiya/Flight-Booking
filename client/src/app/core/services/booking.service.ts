@@ -3,11 +3,13 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Booking } from '../interfaces';
 
+import { environment } from '../../../environments/environment';
+
 @Injectable({
   providedIn: 'root'
 })
 export class BookingService {
-  private apiUrl = 'http://localhost:5000/api/bookings';
+  private apiUrl = `${environment.apiUrl}/bookings`;
 
   constructor(private http: HttpClient) {}
 
@@ -33,5 +35,13 @@ export class BookingService {
 
   downloadTicketPDF(bookingId: string): Observable<Blob> {
     return this.http.get(`${this.apiUrl}/${bookingId}/pdf`, { responseType: 'blob' });
+  }
+
+  lookupBookingByPNR(pnr: string): Observable<Booking> {
+    return this.http.get<Booking>(`${this.apiUrl}/lookup/${pnr.toUpperCase().trim()}`);
+  }
+
+  webCheckIn(pnr: string, passengerIndex: number = 0): Observable<any> {
+    return this.http.post(`${this.apiUrl}/check-in`, { pnr, passengerIndex });
   }
 }

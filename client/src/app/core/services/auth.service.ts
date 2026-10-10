@@ -3,11 +3,13 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { User } from '../interfaces';
 
+import { environment } from '../../../environments/environment';
+
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:5000/api/auth';
+  private apiUrl = `${environment.apiUrl}/auth`;
   currentUser = signal<User | null>(null);
 
   constructor(private http: HttpClient) {
@@ -54,7 +56,7 @@ export class AuthService {
   }
 
   updateProfile(profileData: any): Observable<User> {
-    return this.http.put<User>('http://localhost:5000/api/users/profile', profileData).pipe(
+    return this.http.put<User>(`${environment.apiUrl}/users/profile`, profileData).pipe(
       tap(updated => {
         const current = this.currentUser();
         if (current) {
@@ -76,6 +78,35 @@ export class AuthService {
 
   isAdmin(): boolean {
     return this.currentUser()?.role === 'admin';
+  }
+
+  forgotPassword(email: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/forgot-password`, { email });
+  }
+
+  resetPassword(data: { email: string; otp: string; newPassword: string }): Observable<any> {
+    return this.http.post(`${this.apiUrl}/reset-password`, data);
+  }
+
+  addWalletMoney(amount: number, paymentMethod: string = 'Card'): Observable<any> {
+    return this.http.post(`${environment.apiUrl}/users/wallet/add-money`, { amount, paymentMethod }).pipe(
+      tap((res: any) => {
+        const current = this.currentUser();
+        if (current && res.walletBalance !== undefined) {
+          const updated = { ...current, walletBalance: res.walletBalance };
+          this.currentUser.set(updated);
+          localStorage.setItem('skywings_user', JSON.stringify(updated));
+        }
+      })
+    );
+  }
+
+  getAllUsers(): Observable<User[]> {
+    return this.http.get<User[]>(`${environment.apiUrl}/users`);
+  }
+
+  deleteUser(userId: string): Observable<any> {
+    return this.http.delete(`${environment.apiUrl}/users/${userId}`);
   }
 
   private setUserSession(user: User) {

@@ -37,8 +37,8 @@ import { Flight, Airport, Airline } from '../../../core/interfaces';
           <tbody>
             <tr *ngFor="let f of flights">
               <td><strong>{{ f.flightNumber }}</strong></td>
-              <td>{{ f.airline?.name }}</td>
-              <td>{{ f.departureAirport?.code }} ➔ {{ f.arrivalAirport?.code }}</td>
+              <td>{{ f.airline.name }}</td>
+              <td>{{ f.departureAirport.code }} ➔ {{ f.arrivalAirport.code }}</td>
               <td>{{ f.departureTime }} - {{ f.arrivalTime }} ({{ f.duration }})</td>
               <td>₹{{ f.economyPrice }} / ₹{{ f.businessPrice }}</td>
               <td>{{ f.availableSeats }} / {{ f.totalSeats }}</td>

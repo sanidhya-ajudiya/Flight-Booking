@@ -66,6 +66,44 @@ router.get('/wallet', protect, async (req, res) => {
   }
 });
 
+// @route POST /api/users/wallet/add-money (Recharge Wallet)
+router.post('/wallet/add-money', protect, async (req, res) => {
+  try {
+    const { amount, paymentMethod } = req.body;
+    const numAmount = Number(amount);
+    if (!numAmount || numAmount <= 0) {
+      return res.status(400).json({ message: 'Please enter a valid amount greater than 0' });
+    }
+
+    const user = await User.findById(req.user._id);
+    user.walletBalance = (user.walletBalance || 0) + numAmount;
+    await user.save();
+
+    let wallet = await Wallet.findOne({ user: req.user._id });
+    if (!wallet) {
+      wallet = new Wallet({ user: req.user._id, balance: user.walletBalance, transactions: [] });
+    } else {
+      wallet.balance = user.walletBalance;
+    }
+
+    wallet.transactions.push({
+      type: 'Credit',
+      amount: numAmount,
+      description: `Wallet Top-Up via ${paymentMethod || 'Online Payment'}`,
+      referenceId: `TOPUP-${Date.now()}`
+    });
+    await wallet.save();
+
+    res.json({
+      message: `₹${numAmount} added successfully to your wallet!`,
+      walletBalance: user.walletBalance,
+      wallet
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // @route POST /api/users/passengers
 router.post('/passengers', protect, async (req, res) => {
   try {

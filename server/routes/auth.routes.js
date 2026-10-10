@@ -3,6 +3,7 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Wallet = require('../models/Wallet');
+const { sendPasswordResetOTP } = require('../utils/emailService');
 const { protect } = require('../middleware/auth');
 
 const generateAccessToken = (id) => {
@@ -32,7 +33,7 @@ router.post('/register', async (req, res) => {
       email,
       password,
       phone: phone || '',
-      role: role && ['admin', 'customer'].includes(role) ? role : 'customer'
+      role: 'customer' // Always enforce customer role for public registration
     });
 
     // Create default wallet
@@ -142,25 +143,56 @@ router.get('/me', protect, async (req, res) => {
 
 // @route POST /api/auth/forgot-password
 router.post('/forgot-password', async (req, res) => {
-  const { email } = req.body;
-  const user = await User.findOne({ email });
-  if (!user) {
-    return res.status(404).json({ message: 'No account found with this email' });
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'No account found with this email' });
+    }
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    user.resetPasswordOTP = otp;
+    user.resetPasswordExpire = Date.now() + 10 * 60 * 1000; // 10 mins expiry
+    await user.save();
+
+    // Send email asynchronously
+    sendPasswordResetOTP(user.email, user.name, otp);
+
+    res.json({
+      message: 'Password reset OTP has been sent to your email address.',
+      otpDemo: process.env.NODE_ENV !== 'production' ? otp : undefined
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
-  // Simulated OTP/Reset code sent
-  res.json({ message: 'Password reset link and OTP sent to your registered email' });
 });
 
 // @route POST /api/auth/reset-password
 router.post('/reset-password', async (req, res) => {
-  const { email, newPassword } = req.body;
-  const user = await User.findOne({ email });
-  if (!user) {
-    return res.status(404).json({ message: 'User not found' });
+  try {
+    const { email, otp, newPassword } = req.body;
+    if (!otp) {
+      return res.status(400).json({ message: 'OTP is required' });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (!user.resetPasswordOTP || user.resetPasswordOTP !== otp || user.resetPasswordExpire < Date.now()) {
+      return res.status(400).json({ message: 'Invalid or expired OTP' });
+    }
+
+    user.password = newPassword;
+    user.resetPasswordOTP = null;
+    user.resetPasswordExpire = null;
+    await user.save();
+
+    res.json({ message: 'Password updated successfully. Please login with your new password.' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
-  user.password = newPassword;
-  await user.save();
-  res.json({ message: 'Password updated successfully. Please login with your new password.' });
 });
 
 module.exports = router;

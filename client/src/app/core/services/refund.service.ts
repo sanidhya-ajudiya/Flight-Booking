@@ -3,11 +3,13 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Refund } from '../interfaces';
 
+import { environment } from '../../../environments/environment';
+
 @Injectable({
   providedIn: 'root'
 })
 export class RefundService {
-  private apiUrl = 'http://localhost:5000/api/refunds';
+  private apiUrl = `${environment.apiUrl}/refunds`;
 
   constructor(private http: HttpClient) {}
 

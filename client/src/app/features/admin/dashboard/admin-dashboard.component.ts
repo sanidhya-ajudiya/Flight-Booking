@@ -52,10 +52,10 @@ import { DashboardKPIs } from '../../../core/interfaces';
           </div>
         </div>
 
-        <div class="kpi-card glass-card">
+        <div class="kpi-card glass-card" routerLink="/admin/users" style="cursor: pointer;" title="Manage User Accounts">
           <span class="kpi-icon">👥</span>
           <div>
-            <span class="kpi-label">Registered Customers</span>
+            <span class="kpi-label">Registered Customers ➔</span>
             <h3 class="kpi-value">{{ kpis.customers }}</h3>
           </div>
         </div>

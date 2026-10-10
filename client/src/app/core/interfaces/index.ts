@@ -66,6 +66,9 @@ export interface Passenger {
   nationality?: string;
   seatNumber: string;
   extraBaggageKg?: number;
+  isCheckedIn?: boolean;
+  boardingPassNumber?: string;
+  gate?: string;
 }
 
 export interface Booking {

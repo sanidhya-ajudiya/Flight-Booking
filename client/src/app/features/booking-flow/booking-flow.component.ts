@@ -174,9 +174,9 @@ import { Flight, Booking, Passenger } from '../../core/interfaces';
           <h3 class="sidebar-heading">Fare Summary</h3>
 
           <div class="flight-mini-card">
-            <img [src]="flight.airline?.logo" class="mini-logo">
+            <img [src]="flight.airline.logo" class="mini-logo">
             <div>
-              <h4>{{ flight.airline?.name }}</h4>
+              <h4>{{ flight.airline.name }}</h4>
               <span>{{ flight.flightNumber }} • {{ cabinClass | uppercase }}</span>
             </div>
           </div>
@@ -184,12 +184,12 @@ import { Flight, Booking, Passenger } from '../../core/interfaces';
           <div class="mini-route">
             <div>
               <strong>{{ flight.departureTime }}</strong>
-              <span>{{ flight.departureAirport?.code }}</span>
+              <span>{{ flight.departureAirport.code }}</span>
             </div>
             <div class="mini-arrow">➔</div>
             <div>
               <strong>{{ flight.arrivalTime }}</strong>
-              <span>{{ flight.arrivalAirport?.code }}</span>
+              <span>{{ flight.arrivalAirport.code }}</span>
             </div>
           </div>
 
@@ -431,6 +431,20 @@ export class BookingFlowComponent implements OnInit {
   }
 
   goToStep(step: number) {
+    if (this.currentStep === 2 && step === 3 && this.flight) {
+      this.flightService.lockSeats(this.flight._id, this.selectedSeats).subscribe({
+        next: () => {
+          this.currentStep = step;
+        },
+        error: (err) => {
+          alert(err.error?.message || 'Selected seats could not be reserved. Please choose alternative seats.');
+          if (this.flight) {
+            this.flightService.getFlightById(this.flight._id).subscribe(f => this.flight = f);
+          }
+        }
+      });
+      return;
+    }
     this.currentStep = step;
   }
 

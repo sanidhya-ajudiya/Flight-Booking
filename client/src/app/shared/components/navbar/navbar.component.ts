@@ -24,8 +24,11 @@ import { ThemeService } from '../../../core/services/theme.service';
         <nav class="nav-menu">
           <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-link">Book Flight</a>
           <a routerLink="/search" routerLinkActive="active" class="nav-link">Search Flights</a>
+          <a routerLink="/flight-status" routerLinkActive="active" class="nav-link">Flight Status</a>
+          <a routerLink="/check-in" routerLinkActive="active" class="nav-link">Web Check-in</a>
           <a *ngIf="authService.isLoggedIn()" routerLink="/my-bookings" routerLinkActive="active" class="nav-link">My Bookings</a>
           <a *ngIf="authService.isAdmin()" routerLink="/admin" routerLinkActive="active" class="nav-link admin-badge">Admin Portal</a>
+          <a *ngIf="authService.isAdmin()" routerLink="/admin/users" routerLinkActive="active" class="nav-link admin-badge">Manage Users</a>
         </nav>
 
         <!-- Right Action Controls -->

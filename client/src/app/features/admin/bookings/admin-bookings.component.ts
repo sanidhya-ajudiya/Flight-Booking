@@ -32,8 +32,8 @@ import { Booking } from '../../../core/interfaces';
           <tbody>
             <tr *ngFor="let b of bookings">
               <td><strong>{{ b.pnr }}</strong></td>
-              <td>{{ b.user?.name }}<br><small>{{ b.user?.email }}</small></td>
-              <td>{{ b.flight?.flightNumber }} ({{ b.flight?.departureAirport?.code }} ➔ {{ b.flight?.arrivalAirport?.code }})</td>
+              <td>{{ b.user.name }}<br><small>{{ b.user.email }}</small></td>
+              <td>{{ b.flight.flightNumber }} ({{ b.flight.departureAirport.code }} ➔ {{ b.flight.arrivalAirport.code }})</td>
               <td>{{ b.passengers.length }} Pax</td>
               <td>₹{{ b.totalAmount }}</td>
               <td><span class="badge badge-info">{{ b.paymentMethod }}</span></td>

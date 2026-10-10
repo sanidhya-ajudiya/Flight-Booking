@@ -84,6 +84,37 @@ router.get('/', async (req, res) => {
   }
 });
 
+// @route GET /api/flights/live-status (Public Live Flight Status)
+router.get('/live-status', async (req, res) => {
+  try {
+    const { flightNumber, date } = req.query;
+    let query = {};
+
+    if (flightNumber) {
+      query.flightNumber = new RegExp(flightNumber.trim(), 'i');
+    }
+
+    if (date) {
+      const startOfDay = new Date(date);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(date);
+      endOfDay.setHours(23, 59, 59, 999);
+      query.departureDate = { $gte: startOfDay, $lte: endOfDay };
+    }
+
+    const flights = await Flight.find(query)
+      .populate('airline')
+      .populate('departureAirport')
+      .populate('arrivalAirport')
+      .sort({ departureDate: -1, departureTime: 1 })
+      .limit(20);
+
+    res.json(flights);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // @route GET /api/flights/:id
 router.get('/:id', async (req, res) => {
   try {
@@ -95,7 +126,80 @@ router.get('/:id', async (req, res) => {
     if (!flight) {
       return res.status(404).json({ message: 'Flight not found' });
     }
+
+    // Clean up expired locks
+    const now = new Date();
+    if (flight.lockedSeats && flight.lockedSeats.length > 0) {
+      flight.lockedSeats = flight.lockedSeats.filter(l => l.lockedUntil > now);
+      await flight.save();
+    }
+
     res.json(flight);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @route POST /api/flights/:id/lock-seats (Temporary 10-Minute Seat Reservation)
+router.post('/:id/lock-seats', protect, async (req, res) => {
+  try {
+    const { seats } = req.body; // e.g. ["12A", "12B"]
+    if (!Array.isArray(seats) || seats.length === 0) {
+      return res.status(400).json({ message: 'Seats array is required' });
+    }
+
+    const flight = await Flight.findById(req.params.id);
+    if (!flight) {
+      return res.status(404).json({ message: 'Flight not found' });
+    }
+
+    const now = new Date();
+    // Remove expired locks
+    flight.lockedSeats = (flight.lockedSeats || []).filter(l => l.lockedUntil > now);
+
+    // Check if any requested seat is permanently booked
+    const conflictOccupied = seats.find(s => flight.occupiedSeats.includes(s));
+    if (conflictOccupied) {
+      return res.status(409).json({ message: `Seat ${conflictOccupied} is already booked` });
+    }
+
+    // Check if any requested seat is locked by someone else
+    const conflictLocked = flight.lockedSeats.find(l => 
+      seats.includes(l.seatNumber) && l.userId.toString() !== req.user._id.toString()
+    );
+    if (conflictLocked) {
+      return res.status(409).json({ message: `Seat ${conflictLocked.seatNumber} is currently selected by another passenger` });
+    }
+
+    // Lock seats for 10 minutes (TTL)
+    const tenMinutesLater = new Date(Date.now() + 10 * 60 * 1000);
+    // Remove previous locks by this user on this flight
+    flight.lockedSeats = flight.lockedSeats.filter(l => l.userId.toString() !== req.user._id.toString());
+    
+    seats.forEach(seat => {
+      flight.lockedSeats.push({
+        seatNumber: seat,
+        userId: req.user._id,
+        lockedUntil: tenMinutesLater
+      });
+    });
+
+    await flight.save();
+    res.json({ message: 'Seats successfully locked for 10 minutes', lockedSeats: seats, expiresAt: tenMinutesLater });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @route POST /api/flights/:id/unlock-seats
+router.post('/:id/unlock-seats', protect, async (req, res) => {
+  try {
+    const flight = await Flight.findById(req.params.id);
+    if (flight) {
+      flight.lockedSeats = (flight.lockedSeats || []).filter(l => l.userId.toString() !== req.user._id.toString());
+      await flight.save();
+    }
+    res.json({ message: 'Seats unlocked' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

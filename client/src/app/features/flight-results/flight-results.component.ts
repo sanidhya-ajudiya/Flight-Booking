@@ -81,9 +81,9 @@ import { Flight, Airline } from '../../core/interfaces';
           <div *ngFor="let flight of flights" class="flight-card glass-card">
             <!-- Airline Branding -->
             <div class="airline-info">
-              <img [src]="flight.airline?.logo" [alt]="flight.airline?.name" class="airline-logo">
+              <img [src]="flight.airline.logo" [alt]="flight.airline.name" class="airline-logo">
               <div>
-                <h4 class="airline-name">{{ flight.airline?.name }}</h4>
+                <h4 class="airline-name">{{ flight.airline.name }}</h4>
                 <span class="flight-no">{{ flight.flightNumber }}</span>
               </div>
             </div>
@@ -92,8 +92,8 @@ import { Flight, Airline } from '../../core/interfaces';
             <div class="route-info">
               <div class="dep-time">
                 <span class="time">{{ flight.departureTime }}</span>
-                <span class="code">{{ flight.departureAirport?.code }}</span>
-                <span class="city">{{ flight.departureAirport?.city }}</span>
+                <span class="code">{{ flight.departureAirport.code }}</span>
+                <span class="city">{{ flight.departureAirport.city }}</span>
               </div>
 
               <div class="duration-bar">
@@ -106,8 +106,8 @@ import { Flight, Airline } from '../../core/interfaces';
 
               <div class="arr-time">
                 <span class="time">{{ flight.arrivalTime }}</span>
-                <span class="code">{{ flight.arrivalAirport?.code }}</span>
-                <span class="city">{{ flight.arrivalAirport?.city }}</span>
+                <span class="code">{{ flight.arrivalAirport.code }}</span>
+                <span class="city">{{ flight.arrivalAirport.city }}</span>
               </div>
             </div>
 

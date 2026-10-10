@@ -18,6 +18,11 @@ const flightSchema = new mongoose.Schema({
   totalSeats: { type: Number, default: 120 },
   availableSeats: { type: Number, default: 120 },
   occupiedSeats: [{ type: String }], // e.g. ["1A", "3C", "12B"]
+  lockedSeats: [{
+    seatNumber: { type: String, required: true },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    lockedUntil: { type: Date, required: true }
+  }],
   status: { 
     type: String, 
     enum: ['Scheduled', 'Delayed', 'On-Time', 'In-Flight', 'Completed', 'Cancelled'], 

@@ -20,6 +20,8 @@ const userSchema = new mongoose.Schema({
     phone: String
   }],
   refreshToken: { type: String, default: null },
+  resetPasswordOTP: { type: String, default: null },
+  resetPasswordExpire: { type: Date, default: null },
   isVerified: { type: Boolean, default: true }
 }, { timestamps: true });
 

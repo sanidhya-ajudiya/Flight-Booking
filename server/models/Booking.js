@@ -7,7 +7,10 @@ const passengerSchema = new mongoose.Schema({
   passportNumber: { type: String, default: '' },
   nationality: { type: String, default: 'Indian' },
   seatNumber: { type: String, required: true },
-  extraBaggageKg: { type: Number, default: 0 }
+  extraBaggageKg: { type: Number, default: 0 },
+  isCheckedIn: { type: Boolean, default: false },
+  boardingPassNumber: { type: String, default: '' },
+  gate: { type: String, default: 'G12' }
 });
 
 const bookingSchema = new mongoose.Schema({

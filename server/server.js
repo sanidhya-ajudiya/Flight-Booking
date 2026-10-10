@@ -31,6 +31,7 @@ app.use('/api/refunds', require('./routes/refund.routes'));
 app.use('/api/analytics', require('./routes/analytics.routes'));
 app.use('/api/notifications', require('./routes/notification.routes'));
 app.use('/api/users', require('./routes/user.routes'));
+app.use('/api/reviews', require('./routes/review.routes'));
 
 // Default root endpoint
 app.get('/', (req, res) => {

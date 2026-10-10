@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
 import { HttpClient } from '@angular/common/http';
 import { User, Wallet } from '../../core/interfaces';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-profile',
@@ -61,6 +62,29 @@ import { User, Wallet } from '../../core/interfaces';
               <h2 class="wallet-balance">₹{{ wallet?.balance || user?.walletBalance || 0 }}</h2>
             </div>
             <div class="wallet-icon-badge">👛</div>
+          </div>
+
+          <!-- Top-up Wallet Section -->
+          <div class="topup-box">
+            <h5 class="topup-title">⚡ Quick Wallet Recharge</h5>
+            <div class="quick-amounts">
+              <button type="button" (click)="topupAmount = 500" class="chip-btn" [class.active]="topupAmount === 500">+₹500</button>
+              <button type="button" (click)="topupAmount = 1000" class="chip-btn" [class.active]="topupAmount === 1000">+₹1,000</button>
+              <button type="button" (click)="topupAmount = 2000" class="chip-btn" [class.active]="topupAmount === 2000">+₹2,000</button>
+              <button type="button" (click)="topupAmount = 5000" class="chip-btn" [class.active]="topupAmount === 5000">+₹5,000</button>
+            </div>
+            <div class="topup-input-row">
+              <div class="amount-field">
+                <span class="currency-prefix">₹</span>
+                <input type="number" [(ngModel)]="topupAmount" placeholder="Enter amount" min="100" class="custom-input amount-input">
+              </div>
+              <button (click)="onRechargeWallet()" [disabled]="recharging || !topupAmount" class="btn-primary recharge-btn">
+                {{ recharging ? 'Processing...' : 'Add Money ➔' }}
+              </button>
+            </div>
+            <div *ngIf="topupSuccess" class="topup-alert-success">
+              {{ topupSuccess }}
+            </div>
           </div>
 
           <h4 class="ledger-title">Transaction Ledger</h4>
@@ -183,6 +207,18 @@ import { User, Wallet } from '../../core/interfaces';
 
     .tx-amount { font-weight: 800; font-size: 1rem; color: #ef4444; &.credit { color: #16a34a; } }
 
+    .topup-box { background: rgba(56, 189, 248, 0.05); border: 1px dashed var(--border-color); border-radius: 14px; padding: 18px; margin-bottom: 24px; }
+    .topup-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 12px; color: var(--primary); }
+    .quick-amounts { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+    .chip-btn { background: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-color); border-radius: 20px; padding: 6px 14px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: 0.2s; }
+    .chip-btn:hover, .chip-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .topup-input-row { display: flex; gap: 10px; align-items: center; }
+    .amount-field { position: relative; flex: 1; }
+    .currency-prefix { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-weight: bold; color: var(--text-muted); }
+    .amount-input { padding-left: 28px !important; }
+    .recharge-btn { white-space: nowrap; padding: 10px 18px; }
+    .topup-alert-success { margin-top: 10px; color: #4ade80; font-size: 0.85rem; font-weight: 600; }
+
     @media (max-width: 900px) {
       .profile-grid { grid-template-columns: 1fr; }
     }
@@ -201,6 +237,10 @@ export class ProfileComponent implements OnInit {
   nationality: string = '';
   saving: boolean = false;
 
+  topupAmount: number = 1000;
+  recharging: boolean = false;
+  topupSuccess: string = '';
+
   ngOnInit() {
     this.user = this.authService.currentUser();
     if (this.user) {
@@ -214,9 +254,32 @@ export class ProfileComponent implements OnInit {
   }
 
   fetchWallet() {
-    this.http.get<Wallet>('http://localhost:5000/api/users/wallet').subscribe({
+    this.http.get<Wallet>(`${environment.apiUrl}/users/wallet`).subscribe({
       next: data => this.wallet = data,
       error: err => console.error(err)
+    });
+  }
+
+  onRechargeWallet() {
+    if (!this.topupAmount || this.topupAmount <= 0) return;
+    this.recharging = true;
+    this.topupSuccess = '';
+
+    this.authService.addWalletMoney(this.topupAmount, 'UPI/Card').subscribe({
+      next: (res: any) => {
+        this.recharging = false;
+        this.topupSuccess = res.message || `₹${this.topupAmount} added successfully!`;
+        if (this.wallet && res.wallet) {
+          this.wallet = res.wallet;
+        } else {
+          this.fetchWallet();
+        }
+        setTimeout(() => this.topupSuccess = '', 4000);
+      },
+      error: (err: any) => {
+        this.recharging = false;
+        alert(err.error?.message || 'Failed to recharge wallet');
+      }
     });
   }
 

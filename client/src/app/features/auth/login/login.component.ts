@@ -33,7 +33,10 @@ import { AuthService } from '../../../core/services/auth.service';
           </div>
 
           <div class="form-group">
-            <label>Password</label>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <label>Password</label>
+              <a routerLink="/forgot-password" style="font-size: 0.8rem; color: var(--primary); text-decoration: none;">Forgot Password?</a>
+            </div>
             <input type="password" [(ngModel)]="password" name="password" required placeholder="••••••••" class="custom-input">
           </div>
 
